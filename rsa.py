@@ -118,8 +118,27 @@ def generate_keys(N):
     public_key = load_pem_file('keys/PU.pem')
     private_key = load_pem_file('keys/PR.pem')
 
+    return public_key, private_key
+
+def encrypt(M, PU):
+    e = PU['e']
+    n = PU['n']
+    C = pow(M, e, n)
+    return C
+
+def decrypt(C, PR):
+    d = PR['d']
+    n = PR['n']
+    M = pow(C, d, n)
+    return M
+
 def main():
-    generate_keys(512)
+    PU, PR = generate_keys(512)
+    C = encrypt(5, PU)
+    print(f'Encrypted message: {C}')
+    M = decrypt(C, PR)
+    print(f'Decrypted message: {M}')
+
 
 if __name__ == '__main__':
     main()
