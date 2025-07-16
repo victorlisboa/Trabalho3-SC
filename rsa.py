@@ -93,6 +93,7 @@ def load_pem_file(file_name):
 
 
 def generate_keys(N):
+    sieve(1000000)
     p = choosePrimeNumber(N)
     q = choosePrimeNumber(N)
 
@@ -133,7 +134,7 @@ def decrypt(C, PR):
     return M
 
 def main():
-    PU, PR = generate_keys(512)
+    PU, PR = generate_keys(1024)
     C = encrypt(5, PU)
     print(f'Encrypted message: {C}')
     M = decrypt(C, PR)
