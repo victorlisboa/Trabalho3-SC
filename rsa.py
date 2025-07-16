@@ -55,6 +55,7 @@ def isPrime(n):
 def choosePrimeNumber(N):
     # it is expected to find a prime number after testing about Log(p)/2∼ candidates
     candidate = randbits(N) | 1
+    candidate |= (1 << (N - 1)) | 1 # garante que o numero tem N bits
     while not isPrime(candidate):
         candidate += 2
 
@@ -122,22 +123,33 @@ def generate_keys(N):
     return public_key, private_key
 
 def encrypt(M, PU):
+    # eh esperado que M seja bytes
+    # retorna C em bytes
+
+    M = int.from_bytes(M, 'big')
     e = PU['e']
     n = PU['n']
     C = pow(M, e, n)
-    return C
+
+    return C.to_bytes(256, 'big')
 
 def decrypt(C, PR):
+    # eh esperado que C seja bytes
+    # retorna M em bytes
+
+    C = int.from_bytes(C, 'big')
     d = PR['d']
     n = PR['n']
     M = pow(C, d, n)
-    return M
+
+    return M.to_bytes(256, 'big')
 
 def main():
     PU, PR = generate_keys(1024)
-    C = encrypt(5, PU)
+    M = 5
+    C = encrypt(M.to_bytes(256, 'big'), PU)
     print(f'Encrypted message: {C}')
-    M = decrypt(C, PR)
+    M = decrypt(C.to_bytes(256, 'big'), PR)
     print(f'Decrypted message: {M}')
 
 
