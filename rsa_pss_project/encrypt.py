@@ -4,12 +4,12 @@ import secrets
 
 
 class rsa_oaep(rsa):
-    def __init__(self, hLen=61, k=256):
+    def __init__(self, hLen=32, k=256):
         super().__init__(k)
         self.hLen = hLen
 
     def encrypt(self, PU, M, L=""):
-        if len(L) > ((1 << self.hLen) - 1):
+        if len(L) > ((1 << 61) - 1):
             raise ValueError("Label too long")
         if len(M) > (self.k - (2 * self.hLen) - 2):
             raise ValueError("Message too long")
@@ -28,7 +28,7 @@ class rsa_oaep(rsa):
         return C
     
     def decrypt(self, PR, C, L=""):
-        if len(L) > ((1 << self.hLen) - 1):
+        if len(L) > ((1 << 61) - 1):
             raise ValueError("Decryption error")
         if len(C) != self.k:
             raise ValueError("Decryption error")

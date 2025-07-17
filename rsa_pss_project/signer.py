@@ -3,15 +3,14 @@ from utils import *
 import secrets
 
 class rsa_pss(rsa):
-    def __init__(self, hLen=61, sLen=32, emBits=2047):
+    def __init__(self, hLen=32, sLen=32, k=256):
+        super().__init__(k)
         self.hLen = hLen
         self.sLen = sLen
-        self.emBits = emBits
-        self.emLen = emBits + 7 // 8
-        super().__init__(self.emLen)
+        self.emLen = k-1
 
     def sign(self, M, PR):
-        if len(M) > ((1 << self.hLen) - 1):
+        if len(M) > ((1 << 61) - 1):
             raise ValueError("Message too long")
         if self.emLen < self.hLen + self.sLen + 2:
             raise ValueError("Encoding error")
@@ -40,21 +39,40 @@ class rsa_pss(rsa):
 
         return signature
 
-    def verify_signature(self, message, signature, PU):
+    def verify_signature(self, M, signature, PU):
+        if len(M) > ((1 << 61) - 1):
+            return False
+        if self.emLen < self.hLen + self.sLen + 2:
+            return False
+
         # recover EM
         EM = super().encrypt(signature, PU)
-        maskedDB, H, bc = EM[-255:-33], EM[-33:-1], EM[-1:]
+        maskedDB, H, bc = EM[-self.emLen:-self.hLen-1], EM[-self.hLen-1:-1], EM[-1:]
 
         if bc != b'\xbc':
-            raise ValueError("Trailer byte 0xBC not found in the signed message")
+            return False
         
-        T = MGF(H, len(maskedDB))
-        DB = bytes(x ^ y for x, y in zip(maskedDB, T))
-        salt = DB[-32:]
+        dbMask = MGF(H, len(maskedDB))
+        DB = bytes(x ^ y for x, y in zip(maskedDB, dbMask))
 
-        MHash = self.Hash(message, salt)
+        ps_len = self.emLen - self.hLen - self.sLen - 2
+        
+        # check if the leftmost ps_len bytes are all zero
+        if DB[:ps_len] != b'\x00' * ps_len:
+            return False
+        
+        # check if the byte at position ps_len is 0x01
+        if DB[ps_len] != b'\x01':
+            return False
+        
+        salt = DB[-self.sLen:]
 
-        return MHash == H
+        MHash = self.Hash(M, salt)
+
+        if not MHash == H:
+            return False
+
+        return True
     
     @staticmethod
     def Hash(m, salt):
