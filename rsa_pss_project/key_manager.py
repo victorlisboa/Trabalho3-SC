@@ -42,18 +42,19 @@ class RSAKey:
         # salva chaves em arquivo .pem
         if not os.path.exists('keys'):
             os.makedirs('keys')
-        self.store_pem_file('keys/PU.pem', public_key)
+        self.store_pem_file('keys/PU.pem', public_key, "PUBLIC")
         self.store_pem_file('keys/PR.pem', private_key)
 
-    
-    def store_pem_file(file_name, fields):
+    @staticmethod
+    def store_pem_file(file_name, fields, key_type="PRIVATE"):
         with open(file_name, 'w') as f:
-            f.write(f'-----BEGIN PRIVATE KEY-----\n')
+            f.write(f'-----BEGIN {key_type} KEY-----\n')
             for name, value in fields.items():
                 line = f'{name}:{utils.int_to_base64(value)}'
                 f.write(line + '\n')
-            f.write(f'-----END PRIVATE KEY-----\n')
+            f.write(f'-----END {key_type} KEY-----\n')
     
+    @staticmethod
     def load_pem_file(file_name):
         with open(file_name, 'r') as f:
             lines = f.readlines()

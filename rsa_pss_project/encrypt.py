@@ -1,14 +1,14 @@
-import rsa
-from utils import *
+from . import rsa   
+from .utils import *
 import secrets
 
 
-class rsa_oaep(rsa):
+class rsa_oaep(rsa.rsa):
     def __init__(self, hLen=32, k=256):
         super().__init__(k)
         self.hLen = hLen
 
-    def encrypt(self, PU, M, L=""):
+    def encrypt(self, PU, M, L=b''):
         if len(L) > ((1 << 61) - 1):
             raise ValueError("Label too long")
         if len(M) > (self.k - (2 * self.hLen) - 2):
@@ -24,10 +24,10 @@ class rsa_oaep(rsa):
         maskedSeed = bytes(x ^ y for x, y in zip(seed, seedMask))
         EM = b'\x00' + maskedSeed + maskedDB
 
-        C = super().encrypt(EM, PU)
-        return C
+        C = self.rsa_encrypt(EM, PU)
+        return byte_to_base64(C)
     
-    def decrypt(self, PR, C, L=""):
+    def decrypt(self, PR, C, L=b''):
         if len(L) > ((1 << 61) - 1):
             raise ValueError("Decryption error")
         if len(C) != self.k:
@@ -35,7 +35,7 @@ class rsa_oaep(rsa):
         if self.k < 2*self.hLen + 2 :
             raise ValueError("Decryption error")
         
-        EM = super().decrypt(C, PR)
+        EM = self.rsa_decrypt(C, PR)
         Y, maskedSeed, maskedDB = EM[:1], EM[1: -(self.k - self.hLen - 1)], EM[-(self.k - self.hLen - 1):]
         if Y != b'\x00':
             raise ValueError("Decryption error")
@@ -52,8 +52,4 @@ class rsa_oaep(rsa):
         except ValueError:
             raise ValueError("Decryption error")
         M = DB[idx+1:]
-        return M
-        
-
-
-
+        return M.decode("utf-8")

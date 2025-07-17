@@ -1,8 +1,8 @@
-import rsa
-from utils import *
+from . import rsa
+from .utils import *
 import secrets
 
-class rsa_pss(rsa):
+class rsa_pss(rsa.rsa):
     def __init__(self, hLen=32, sLen=32, k=256):
         super().__init__(k)
         self.hLen = hLen
@@ -35,18 +35,19 @@ class rsa_pss(rsa):
         EM = maskedDB + H + b'\xbc'
 
         # 7 - sign EM
-        signature = super().decrypt(EM, PR)
+        signature = self.rsa_decrypt(EM, PR)
 
-        return signature
+        return byte_to_base64(signature)
 
     def verify_signature(self, M, signature, PU):
         if len(M) > ((1 << 61) - 1):
             return False
         if self.emLen < self.hLen + self.sLen + 2:
             return False
-
+        
         # recover EM
-        EM = super().encrypt(signature, PU)
+        signature = base64_to_byte(signature)
+        EM = self.rsa_encrypt(signature, PU)
         maskedDB, H, bc = EM[-self.emLen:-self.hLen-1], EM[-self.hLen-1:-1], EM[-1:]
 
         if bc != b'\xbc':
@@ -62,7 +63,7 @@ class rsa_pss(rsa):
             return False
         
         # check if the byte at position ps_len is 0x01
-        if DB[ps_len] != b'\x01':
+        if DB[ps_len] != 1:
             return False
         
         salt = DB[-self.sLen:]

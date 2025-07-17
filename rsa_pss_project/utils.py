@@ -12,6 +12,12 @@ def MGF(H, lenT):
         cnt += 1
     return T[:lenT]
 
+def byte_to_base64(bytes):
+    return base64.b64encode(bytes).decode('ascii')
+
+def base64_to_byte(b64):
+    return base64.b64decode(b64)
+
 def int_to_base64(n):
     b = n.to_bytes((n.bit_length() + 7) // 8 or 1, 'big')
     return base64.b64encode(b).decode('ascii')
