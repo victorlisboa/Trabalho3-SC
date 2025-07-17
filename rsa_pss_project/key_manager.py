@@ -4,13 +4,16 @@ from secrets import randbits
 from random import randint
 from . import utils
 
+class KeySizeTooSmallError(Exception):
+    pass
+
 class RSAKey:
     """
     Gerencia um par de chaves RSA (geracao, armazenamento e carregamento)
     """
     def __init__(self, bits=2048):
         if bits < 1024:
-            raise ValueError("A chave deve ter pelo menos 1024 bits.")
+            raise KeySizeTooSmallError("A chave deve ter pelo menos 1024 bits.")
         self.bits = bits
         self.n = None
         self.e = None # Expoente publico

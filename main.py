@@ -2,7 +2,7 @@ import base64
 import os
 import sys
 
-from rsa_pss_project.key_manager import RSAKey
+from rsa_pss_project.key_manager import RSAKey, KeySizeTooSmallError
 from rsa_pss_project.signer import rsa_pss
 from rsa_pss_project.encrypt import rsa_oaep
 from rsa_pss_project.utils import *
@@ -39,6 +39,8 @@ def handle_generate():
         key = RSAKey(bits=bits)
         key.generate()
         print(f"✅ Chaves salvas com sucesso na pasta 'keys'.")
+    except KeySizeTooSmallError:
+        print("❌ ERRO: O tamanho da chave deve ser pelo menos 1024 bits.")
     except ValueError:
         print("❌ ERRO: O tamanho da chave deve ser um número inteiro.")
     except Exception as e:
@@ -144,8 +146,8 @@ def handle_verify():
         print(f"❌ Ocorreu um erro ao verificar: {e}")
 
 def main():
-    sieve(1000000)
     """Função principal que executa o loop do menu interativo."""
+    sieve(1000000)
     actions = {
         '1': handle_generate,
         '2': handle_encrypt,
@@ -169,6 +171,7 @@ def main():
             print("Opção inválida. Por favor, tente novamente.")
         
         input("\nPressione Enter para continuar...")
+        os.system('cls' if os.name == 'nt' else 'clear')
 
 if __name__ == "__main__":
     main()
