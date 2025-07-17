@@ -14,10 +14,10 @@ class RSAKey:
     def __init__(self, bits=2048):
         if bits < 1024:
             raise KeySizeTooSmallError("A chave deve ter pelo menos 1024 bits.")
-        self.bits = bits
-        self.n = None
-        self.e = None # Expoente publico
-        self._d = None # Expoente privado
+        self.bits = bits    # Tamanho da chave
+        self.n = None       # Modulo
+        self.e = None       # Expoente publico
+        self._d = None      # Expoente privado
 
     def generate(self):
         """
@@ -42,7 +42,7 @@ class RSAKey:
         public_key = {'n': self.n, 'e': self.e}
         private_key = {'n': self.n, 'd': self.d}
 
-        # salva chaves em arquivo .pem
+        # salva chaves em base64 em arquivo .pem
         if not os.path.exists('keys'):
             os.makedirs('keys')
         self.store_pem_file('keys/PU.pem', public_key, "PUBLIC")
@@ -80,6 +80,7 @@ class RSAKey:
 
     @staticmethod
     def choosePublicKey(phi_n):
+        # expoente precisa ser coprimo com phi(n)
         while True:
             e = randint(2, phi_n-1)
             if gcd(phi_n, e) == 1:
