@@ -4,7 +4,7 @@ from random import randint
 
 prime_numbers = []
 
-def mgf(H, lenT):
+def MGF(H, lenT):
     T = b''
     cnt = 0
     while(len(T) < lenT):

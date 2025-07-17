@@ -18,9 +18,9 @@ class rsa_oaep(rsa):
         PS = b'\x00' * (self.k - len(M) - (2 * self.hLen) - 2)
         DB = lHash + PS + b'\x01' + M
         seed = secrets.token_bytes(self.hLen)
-        dbMask = mgf(seed, self.k - self.hLen - 1)
+        dbMask = MGF(seed, self.k - self.hLen - 1)
         maskedDB = bytes(x ^ y for x, y in zip(DB, dbMask))
-        seedMask = mgf(maskedDB, self.hLen)
+        seedMask = MGF(maskedDB, self.hLen)
         maskedSeed = bytes(x ^ y for x, y in zip(seed, seedMask))
         EM = b'\x00' + maskedSeed + maskedDB
 
@@ -40,9 +40,9 @@ class rsa_oaep(rsa):
         if Y != b'\x00':
             raise ValueError("Decryption error")
         lHash = hashlib.sha3_256(L).digest()
-        seedMask = mgf(maskedDB, self.hLen)
+        seedMask = MGF(maskedDB, self.hLen)
         seed = bytes(x ^ y for x, y in zip(maskedSeed, seedMask))
-        dbMask = mgf(seed, (self.k - self.hLen - 1))
+        dbMask = MGF(seed, (self.k - self.hLen - 1))
         DB = bytes(x ^ y for x, y in zip(maskedDB, dbMask))
         lHash_ =  DB[:self.hLen]
         if lHash_ != lHash:

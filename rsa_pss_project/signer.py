@@ -3,25 +3,34 @@ from utils import *
 import secrets
 
 class rsa_pss(rsa):
-    def __init__(self, k=256):
-        super().__init__(k)
+    def __init__(self, hLen=61, sLen=32, emBits=2047):
+        self.hLen = hLen
+        self.sLen = sLen
+        self.emBits = emBits
+        self.emLen = emBits + 7 // 8
+        super().__init__(self.emLen)
 
-    def sign(self, m, PR):
+    def sign(self, M, PR):
+        if len(M) > ((1 << self.hLen) - 1):
+            raise ValueError("Message too long")
+        if self.emLen < self.hLen + self.sLen + 2:
+            raise ValueError("Encoding error")
+
         # 1 - generate the salt
-        salt = secrets.token_bytes(32)
+        salt = secrets.token_bytes(self.sLen)
 
         # 2 - compute the hash value H
-        H = Hash(m, salt)
+        H = self.Hash(M, salt)
 
         # 3 - create the data block (DB)
-        padding2 =  b'\x00' * 189  # 189 = 255 (Em_len) - 32 (salt_len) - 32 (h_len) - 2 (b'\x01' + b'\xbc')
-        DB = padding2 + b'\x01' + salt
+        PS =  b'\x00' * (self.emLen - self.sLen - self.hLen - 2)  # -2 => (b'\x01' + b'\xbc')
+        DB = PS + b'\x01' + salt
 
         # 4 - MGF1 -> masked generation function
-        T = mgf(H, len(DB))
+        dbMask = MGF(H, len(DB))
 
         # 5 - maskedDB -> DB XOR T
-        maskedDB = bytes(x ^ y for x, y in zip(DB, T))
+        maskedDB = bytes(x ^ y for x, y in zip(DB, dbMask))
 
         # 6 - create the encoded message
         EM = maskedDB + H + b'\xbc'
@@ -39,11 +48,11 @@ class rsa_pss(rsa):
         if bc != b'\xbc':
             raise ValueError("Trailer byte 0xBC not found in the signed message")
         
-        T = mgf(H, len(maskedDB))
+        T = MGF(H, len(maskedDB))
         DB = bytes(x ^ y for x, y in zip(maskedDB, T))
         salt = DB[-32:]
 
-        MHash = Hash(message, salt)
+        MHash = self.Hash(message, salt)
 
         return MHash == H
     
@@ -53,10 +62,10 @@ class rsa_pss(rsa):
         mHash = hashlib.sha3_256(m).digest()
 
         # 2 - padding -> a prefix of eight zero byte
-        padding1 = b'\x00' * 8
+        padding = b'\x00' * 8
 
         # 3 - create the block M'
-        m_ = padding1 + mHash + salt
+        m_ = padding + mHash + salt
 
         # 4 - create the second hash(H) (the one to be compared in the verification process)
         return hashlib.sha3_256(m_).digest()
