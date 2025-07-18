@@ -40,7 +40,7 @@ def sieve(n):
             prime_numbers.append(i)
 
 def miller_rabin(n):
-    # O(k*n^3)
+    # O(k*log^3(n))
     if n == 2 or n == 3:
         return True
     if n <= 1 or n % 2 == 0:
